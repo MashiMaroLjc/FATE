@@ -16,8 +16,8 @@
 
 package com.webank.ai.fate.serving;
 
-import com.webank.ai.fate.core.network.grpc.client.ClientPool;
-import com.webank.ai.fate.core.network.http.client.HttpClientPool;
+import com.webank.ai.fate.core.network.grpc.client.GrpcClientPool;
+import com.webank.ai.fate.serving.utils.HttpClientPool;
 import com.webank.ai.fate.core.utils.Configuration;
 import com.webank.ai.fate.serving.manger.InferenceWorkerManager;
 import com.webank.ai.fate.serving.manger.ModelManager;
@@ -95,7 +95,7 @@ public class ServingServer {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                ClientPool.init_pool(serverAddress);
+                GrpcClientPool.initPool(serverAddress);
             }
         }).start();
         LOGGER.info("Finish init client pool");

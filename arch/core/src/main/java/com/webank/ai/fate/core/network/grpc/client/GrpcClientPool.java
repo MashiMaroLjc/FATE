@@ -26,12 +26,12 @@ import io.grpc.ManagedChannelBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ClientPool {
+public class GrpcClientPool {
     //TODO: channel pool
     private static final Logger LOGGER = LogManager.getLogger();
     private static ConcurrentHashMap<String, ManagedChannel> pool = new ConcurrentHashMap();
 
-    public static int init_pool(ArrayList<String> servers){
+    public static int initPool(ArrayList<String> servers){
         servers.forEach((server)->{
             if (createChannel(server) > 0){
                 LOGGER.error("Failed to create channel for {}", server);

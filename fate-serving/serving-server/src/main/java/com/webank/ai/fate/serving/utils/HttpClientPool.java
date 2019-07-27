@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.webank.ai.fate.core.network.http.client;
+package com.webank.ai.fate.serving.utils;
 
 import com.webank.ai.fate.core.utils.ObjectTransform;
 import org.apache.http.client.config.RequestConfig;
@@ -42,6 +42,8 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -53,9 +55,9 @@ public class HttpClientPool {
 
     private static void config(HttpRequestBase httpRequestBase, Map<String, String> headers) {
         RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectionRequestTimeout(10 * 1000)
-                .setConnectTimeout(10 * 1000)
-                .setSocketTimeout(10 * 1000).build();
+                .setConnectionRequestTimeout(500)
+                .setConnectTimeout(500)
+                .setSocketTimeout(2000).build();
         httpRequestBase.addHeader("Content-Type", "application/json;charset=UTF-8");
         if (headers != null){
             headers.forEach((key, value) -> {
@@ -93,6 +95,8 @@ public class HttpClientPool {
         CloseableHttpClient httpClient = HttpClients.custom()
                 .setConnectionManager(poolConnManager)
                 .setDefaultRequestConfig(requestConfig)
+                .evictExpiredConnections()
+                .evictIdleConnections(5, TimeUnit.SECONDS)
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(0, false))
                 .build();
         return httpClient;
