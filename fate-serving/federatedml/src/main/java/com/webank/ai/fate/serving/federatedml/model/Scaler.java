@@ -36,10 +36,10 @@ public class Scaler extends BaseModel {
             String scaleMethod = this.scaleMeta.getStrategy();
             if (scaleMethod.toLowerCase().equals("min_max_scale")) {
                 MinMaxScale minMaxScale = new MinMaxScale();
-                inputData = minMaxScale.transform(inputData, this.scaleParam.getMinmaxScaleParamMap());
+                inputData = minMaxScale.transform(context,inputData, this.scaleParam.getMinmaxScaleParamMap());
             } else if (scaleMethod.toLowerCase().equals("standard_scale")) {
                 StandardScale standardScale = new StandardScale();
-                inputData = standardScale.transform(inputData, this.scaleParam.getStandardScaleParamMap());
+                inputData = standardScale.transform(context ,inputData, this.scaleParam.getStandardScaleParamMap());
             }
         }
         return inputData;
