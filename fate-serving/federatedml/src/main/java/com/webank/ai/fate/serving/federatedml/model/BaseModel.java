@@ -36,8 +36,8 @@ public abstract class BaseModel {
             long  endTime = System.currentTimeMillis();
             long  cost =  endTime-beginTime;
             Object  caseId = context.getData("caseId");
-            String  className = this.getClass().getClass().getName();
-            LOGGER.info("model {} caseid {} predict cost time {}",className,caseId,endTime-cost);
+            String  className = this.getClass().getSimpleName();
+            LOGGER.info("model {} caseid {} predict cost time {}",className,caseId,cost);
         }
 
 
