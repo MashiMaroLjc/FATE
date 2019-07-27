@@ -61,12 +61,19 @@ public class InferenceManager {
                 noCacheInferenceResult.setRetcode(InferenceRetCode.NO_RESULT);
                 return noCacheInferenceResult;
             case ASYNC_RUN:
+                long  beginTime= System.currentTimeMillis();
                 InferenceWorkerManager.exetute(new Runnable() {
                     @Override
                     public void run() {
+
+                        long  inferenceBeginTime = System.currentTimeMillis();
                         runInference(inferenceRequest);
                         LOGGER.info("Inference task exit.");
+                        long  endTime = System.currentTimeMillis();
+
+                        LOGGER.info("request caseId {} cost time {} inference cost time {}",inferenceRequest.getCaseid(),endTime-beginTime,endTime-inferenceBeginTime);
                     }
+
                 });
                 ReturnResult startInferenceJobResult = new ReturnResult();
                 startInferenceJobResult.setRetcode(InferenceRetCode.OK);
