@@ -52,28 +52,39 @@ public class InferenceService extends InferenceServiceGrpc.InferenceServiceImplB
 
     private void inferenceServiceAction(InferenceMessage req, StreamObserver<InferenceMessage> responseObserver, InferenceActionType actionType) {
         InferenceMessage.Builder response = InferenceMessage.newBuilder();
-        ReturnResult returnResult;
+        ReturnResult returnResult = new ReturnResult();
+
+        long beginTime = System.currentTimeMillis();
+        InferenceRequest inferenceRequest =null;
         try{
-            if (accessLOGGER.isDebugEnabled()){
+        try {
+            if (accessLOGGER.isDebugEnabled()) {
                 accessLOGGER.debug(req.getBody().toStringUtf8());
             }
-            InferenceRequest inferenceRequest = (InferenceRequest) ObjectTransform.json2Bean(req.getBody().toStringUtf8(), InferenceRequest.class);
-            if (inferenceRequest != null){
+            inferenceRequest = (InferenceRequest) ObjectTransform.json2Bean(req.getBody().toStringUtf8(), InferenceRequest.class);
+            if (inferenceRequest != null) {
                 returnResult = InferenceManager.inference(inferenceRequest, actionType);
-                if (returnResult.getRetcode() != InferenceRetCode.OK){
+                if (returnResult.getRetcode() != InferenceRetCode.OK) {
                     LOGGER.warn("inference {} failed: \n{}", actionType, req.getBody().toStringUtf8());
                 }
-            }else{
-                returnResult = new ReturnResult();
+            } else {
+
                 returnResult.setRetcode(InferenceRetCode.EMPTY_DATA);
             }
-        }catch (Exception e){
-            returnResult = new ReturnResult();
+        } catch (Throwable e) {
+
             returnResult.setRetcode(InferenceRetCode.SYSTEM_ERROR);
             LOGGER.error(String.format("inference system error:\n%s", req.getBody().toStringUtf8()), e);
         }
+
         response.setBody(ByteString.copyFrom(ObjectTransform.bean2Json(returnResult).getBytes()));
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
+
+        }finally {
+            long  endTime = System.currentTimeMillis();
+
+            LOGGER.info("receive request caseid {} type {} cost time {} return code {}", inferenceRequest!=null?inferenceRequest.getCaseid():"none",actionType,endTime-beginTime,returnResult!=null?returnResult.getRetcode():"none");
+        }
     }
 }
