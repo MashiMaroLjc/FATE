@@ -77,9 +77,17 @@ public class InferenceService extends InferenceServiceGrpc.InferenceServiceImplB
             LOGGER.error(String.format("inference system error:\n%s", req.getBody().toStringUtf8()), e);
         }
 
+        long beginTime2 = System.currentTimeMillis();
+
         response.setBody(ByteString.copyFrom(ObjectTransform.bean2Json(returnResult).getBytes()));
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
+
+        long  endTime2 = System.currentTimeMillis();
+
+        LOGGER.info(" caseid {} flush to remote  cost time {} ", inferenceRequest!=null?inferenceRequest.getCaseid():"none",endTime2-beginTime2);
+
+
 
         }finally {
             long  endTime = System.currentTimeMillis();
