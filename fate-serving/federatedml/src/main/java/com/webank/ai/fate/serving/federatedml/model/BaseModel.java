@@ -35,7 +35,7 @@ public abstract class BaseModel {
         finally {
             long  endTime = System.currentTimeMillis();
             long  cost =  endTime-beginTime;
-            Object  caseId = context.getData("caseId");
+            String   caseId = context.getCaseId();
             String  className = this.getClass().getSimpleName();
             LOGGER.info("model {} caseid {} predict cost time {}",className,caseId,cost);
         }
@@ -76,7 +76,7 @@ public abstract class BaseModel {
 
     protected ReturnResult getFederatedPredictFromRemote(Context  context,FederatedParty srcParty, FederatedParty dstParty, Map<String, Object> requestData) {
 
-        Object  caseId = context.getData("caseId");
+
 
         long  beginTime = System.currentTimeMillis();
 
@@ -112,7 +112,7 @@ public abstract class BaseModel {
         }finally{
             long   end = System.currentTimeMillis();
             long  cost = end -  beginTime;
-            LOGGER.info();
+            LOGGER.info("caseid {} getFederatedPredictFromRemote cost {}");
 
 
         }

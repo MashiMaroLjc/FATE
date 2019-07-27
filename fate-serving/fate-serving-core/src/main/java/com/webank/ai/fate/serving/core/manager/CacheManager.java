@@ -168,10 +168,17 @@ public class CacheManager {
     private static void putIntoRedisCache(String cacheKey, CacheValueConfig cacheValueConfig, ReturnResult returnResult) {
         try (Jedis jedis = jedisPool.getResource()) {
             Pipeline redisPipeline = jedis.pipelined();
-            redisPipeline.select(cacheValueConfig.getDbIndex());
-            redisPipeline.set(cacheKey, ObjectTransform.bean2Json(returnResult));
-            redisPipeline.expire(cacheKey, cacheValueConfig.getTtl());
-            redisPipeline.sync();
+            try {
+                redisPipeline.select(cacheValueConfig.getDbIndex());
+                redisPipeline.set(cacheKey, ObjectTransform.bean2Json(returnResult));
+                redisPipeline.expire(cacheKey, cacheValueConfig.getTtl());
+                redisPipeline.sync();
+            }finally{
+                if(jedis!=null) {
+                    jedis.resetState();
+                    jedis.close();
+                }
+            }
         }
     }
 
