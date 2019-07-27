@@ -52,9 +52,7 @@ public class InferenceManager {
         long inferenceBeginTime = System.currentTimeMillis();
         ReturnResult inferenceResultFromCache = CacheManager.getInferenceResultCache(inferenceRequest.getAppid(), inferenceRequest.getCaseid());
         if (inferenceResultFromCache != null) {
-
             LOGGER.info("request caseId {} cost time {}  hit cache true",inferenceRequest.getCaseid(),System.currentTimeMillis()-inferenceBeginTime);
-
             return inferenceResultFromCache;
         }
         switch (inferenceActionType) {
@@ -95,6 +93,8 @@ public class InferenceManager {
 
     public static ReturnResult runInference(InferenceRequest inferenceRequest) {
         long startTime = System.currentTimeMillis();
+        Context context = new BaseContext();
+        context.setCaseId(inferenceRequest.getCaseid());
         ReturnResult inferenceResult = new ReturnResult();
         inferenceResult.setCaseid(inferenceRequest.getCaseid());
         String modelName = inferenceRequest.getModelVersion();
@@ -130,7 +130,8 @@ public class InferenceManager {
 
         PreProcessingResult preProcessingResult;
         try {
-            preProcessingResult = getPreProcessingFeatureData(rawFeatureData);
+
+            preProcessingResult = getPreProcessingFeatureData(context ,rawFeatureData);
         } catch (Exception ex) {
             LOGGER.error("feature data preprocessing failed", ex);
             inferenceResult.setRetcode(InferenceRetCode.INVALID_FEATURE + 1000);
@@ -157,8 +158,7 @@ public class InferenceManager {
         federatedParams.put("feature_id", featureIds);
         predictParams.put("federatedParams", federatedParams);
 
-        Context context = new BaseContext();
-        context.putData("caseId",inferenceRequest.getCaseid());
+
 
 
 
@@ -171,7 +171,7 @@ public class InferenceManager {
             if(federatedResult!=null) {
                 modelResult.put("retcode", federatedResult.getRetcode());
             }
-            postProcessingResult = getPostProcessedResult(featureData, modelResult);
+            postProcessingResult = getPostProcessedResult(context,featureData, modelResult);
         } catch (Exception ex) {
             LOGGER.error("model result postprocessing failed", ex);
             inferenceResult.setRetcode(InferenceRetCode.COMPUTE_ERROR);
@@ -207,7 +207,7 @@ public class InferenceManager {
         }
 
         if (inferenceResult.getRetcode() == 0) {
-            CacheManager.putInferenceResultCache(inferenceRequest.getAppid(), inferenceRequest.getCaseid(), inferenceResult);
+            CacheManager.putInferenceResultCache(context ,inferenceRequest.getAppid(), inferenceRequest.getCaseid(), inferenceResult);
             LOGGER.info("case {} inference successfully use {} ms.", inferenceRequest.getCaseid(), inferenceElapsed);
         } else {
             LOGGER.info("case {} failed inference, retcode is {}, use {} ms.", inferenceRequest.getCaseid(), inferenceResult.getRetcode(), inferenceElapsed);
@@ -276,16 +276,31 @@ public class InferenceManager {
         return returnResult;
     }
 
-    private static PreProcessingResult getPreProcessingFeatureData(Map<String, Object> originFeatureData) {
-        String classPath = PreProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePreProcessingAdapter");
-        PreProcessing preProcessing = (PreProcessing) InferenceUtils.getClassByName(classPath);
-        return preProcessing.getResult(ObjectTransform.bean2Json(originFeatureData));
+    private static PreProcessingResult getPreProcessingFeatureData(Context  context ,Map<String, Object> originFeatureData) {
+        long beginTime = System.currentTimeMillis();
+        try {
+            String classPath = PreProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePreProcessingAdapter");
+            PreProcessing preProcessing = (PreProcessing) InferenceUtils.getClassByName(classPath);
+            long endTime = System.currentTimeMillis();
+            return preProcessing.getResult(ObjectTransform.bean2Json(originFeatureData));
+        }finally {
+            long  endTime =  System.currentTimeMillis();
+            LOGGER.info("preprocess caseid {} cost time {}",context.getCaseId(),endTime-beginTime);
+        }
+
     }
 
-    private static PostProcessingResult getPostProcessedResult(Map<String, Object> featureData, Map<String, Object> modelResult) {
-        String classPath = PostProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePostProcessingAdapter");
-        PostProcessing postProcessing = (PostProcessing) InferenceUtils.getClassByName(classPath);
-        return postProcessing.getResult(featureData, modelResult);
+    private static PostProcessingResult getPostProcessedResult(Context  context ,Map<String, Object> featureData, Map<String, Object> modelResult) {
+        long beginTime = System.currentTimeMillis();
+        try {
+
+            String classPath = PostProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePostProcessingAdapter");
+            PostProcessing postProcessing = (PostProcessing) InferenceUtils.getClassByName(classPath);
+            return postProcessing.getResult(featureData, modelResult);
+        }finally {
+            long  endTime =  System.currentTimeMillis();
+            LOGGER.info("postprocess caseid {} cost time {}",context.getCaseId(),endTime-beginTime);
+        }
     }
 
     private static ReturnResult getFeatureData(Map<String, Object> featureIds) {

@@ -43,7 +43,7 @@ public abstract class BaseModel {
 
     }
 
-    protected ReturnResult getFederatedPredict(Map<String, Object> federatedParams) {
+    protected ReturnResult getFederatedPredict(Context  context,Map<String, Object> federatedParams) {
         FederatedParty srcParty = (FederatedParty) federatedParams.get("local");
         FederatedRoles federatedRoles = (FederatedRoles) federatedParams.get("role");
         Map<String, Object> featureIds = (Map<String, Object>) federatedParams.get("feature_id");
@@ -68,40 +68,55 @@ public abstract class BaseModel {
         requestData.put("local", ObjectTransform.bean2Json(dstParty));
         requestData.put("role", ObjectTransform.bean2Json(federatedParams.get("role")));
         federatedParams.put("getRemotePartyResult", true);
-        ReturnResult remoteResult = getFederatedPredictFromRemote(srcParty, dstParty, requestData);
+        ReturnResult remoteResult = getFederatedPredictFromRemote(context,srcParty, dstParty, requestData);
         CacheManager.putRemoteModelInferenceResult(dstParty, federatedRoles, featureIds, remoteResult);
         LOGGER.info("Get remote party model inference result from federated request.");
         return remoteResult;
     }
 
-    protected ReturnResult getFederatedPredictFromRemote(FederatedParty srcParty, FederatedParty dstParty, Map<String, Object> requestData) {
+    protected ReturnResult getFederatedPredictFromRemote(Context  context,FederatedParty srcParty, FederatedParty dstParty, Map<String, Object> requestData) {
 
-        Proxy.Packet.Builder packetBuilder = Proxy.Packet.newBuilder();
-        packetBuilder.setBody(Proxy.Data.newBuilder()
-                .setValue(ByteString.copyFrom(ObjectTransform.bean2Json(requestData).getBytes()))
-                .build());
+        Object  caseId = context.getData("caseId");
 
-        Proxy.Metadata.Builder metaDataBuilder = Proxy.Metadata.newBuilder();
-        Proxy.Topic.Builder topicBuilder = Proxy.Topic.newBuilder();
+        long  beginTime = System.currentTimeMillis();
 
-        metaDataBuilder.setSrc(
-                topicBuilder.setPartyId(String.valueOf(srcParty.getPartyId())).
-                        setRole("serving")
-                        .setName("partnerPartyName")
-                        .build());
-        metaDataBuilder.setDst(
-                topicBuilder.setPartyId(String.valueOf(dstParty.getPartyId()))
-                        .setRole("serving")
-                        .setName("partyName")
-                        .build());
-        metaDataBuilder.setCommand(Proxy.Command.newBuilder().setName("federatedInference").build());
-        metaDataBuilder.setConf(Proxy.Conf.newBuilder().setOverallTimeout(60 * 1000));
-        packetBuilder.setHeader(metaDataBuilder.build());
+        try {
 
-        ManagedChannel channel1 = ClientPool.getChannel(Configuration.getProperty("proxy"));
-        DataTransferServiceGrpc.DataTransferServiceBlockingStub stub1 = DataTransferServiceGrpc.newBlockingStub(channel1);
-        Proxy.Packet packet = stub1.unaryCall(packetBuilder.build());
-        ReturnResult remoteResult = (ReturnResult) ObjectTransform.json2Bean(packet.getBody().getValue().toStringUtf8(), ReturnResult.class);
-        return remoteResult;
+            Proxy.Packet.Builder packetBuilder = Proxy.Packet.newBuilder();
+            packetBuilder.setBody(Proxy.Data.newBuilder()
+                    .setValue(ByteString.copyFrom(ObjectTransform.bean2Json(requestData).getBytes()))
+                    .build());
+
+            Proxy.Metadata.Builder metaDataBuilder = Proxy.Metadata.newBuilder();
+            Proxy.Topic.Builder topicBuilder = Proxy.Topic.newBuilder();
+
+            metaDataBuilder.setSrc(
+                    topicBuilder.setPartyId(String.valueOf(srcParty.getPartyId())).
+                            setRole("serving")
+                            .setName("partnerPartyName")
+                            .build());
+            metaDataBuilder.setDst(
+                    topicBuilder.setPartyId(String.valueOf(dstParty.getPartyId()))
+                            .setRole("serving")
+                            .setName("partyName")
+                            .build());
+            metaDataBuilder.setCommand(Proxy.Command.newBuilder().setName("federatedInference").build());
+            metaDataBuilder.setConf(Proxy.Conf.newBuilder().setOverallTimeout(60 * 1000));
+            packetBuilder.setHeader(metaDataBuilder.build());
+
+            ManagedChannel channel1 = ClientPool.getChannel(Configuration.getProperty("proxy"));
+            DataTransferServiceGrpc.DataTransferServiceBlockingStub stub1 = DataTransferServiceGrpc.newBlockingStub(channel1);
+            Proxy.Packet packet = stub1.unaryCall(packetBuilder.build());
+            ReturnResult remoteResult = (ReturnResult) ObjectTransform.json2Bean(packet.getBody().getValue().toStringUtf8(), ReturnResult.class);
+            return remoteResult;
+        }finally{
+            long   end = System.currentTimeMillis();
+            long  cost = end -  beginTime;
+            LOGGER.info();
+
+
+        }
+
+
     }
 }
