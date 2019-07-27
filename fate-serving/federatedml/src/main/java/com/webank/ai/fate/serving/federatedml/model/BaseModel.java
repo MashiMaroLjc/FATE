@@ -6,7 +6,7 @@ import com.webank.ai.fate.api.networking.proxy.Proxy;
 import com.webank.ai.fate.core.bean.FederatedParty;
 import com.webank.ai.fate.core.bean.FederatedRoles;
 import com.webank.ai.fate.core.bean.ReturnResult;
-import com.webank.ai.fate.core.network.grpc.client.ClientPool;
+import com.webank.ai.fate.core.network.grpc.client.GrpcClientPool;
 import com.webank.ai.fate.core.utils.Configuration;
 import com.webank.ai.fate.core.utils.ObjectTransform;
 import com.webank.ai.fate.serving.core.manager.CacheManager;
@@ -80,7 +80,7 @@ public abstract class BaseModel {
         metaDataBuilder.setConf(Proxy.Conf.newBuilder().setOverallTimeout(60 * 1000));
         packetBuilder.setHeader(metaDataBuilder.build());
 
-        ManagedChannel channel1 = ClientPool.getChannel(Configuration.getProperty("proxy"));
+        ManagedChannel channel1 = GrpcClientPool.getChannel(Configuration.getProperty("proxy"));
         DataTransferServiceGrpc.DataTransferServiceBlockingStub stub1 = DataTransferServiceGrpc.newBlockingStub(channel1);
         Proxy.Packet packet = stub1.unaryCall(packetBuilder.build());
         ReturnResult remoteResult = (ReturnResult) ObjectTransform.json2Bean(packet.getBody().getValue().toStringUtf8(), ReturnResult.class);
