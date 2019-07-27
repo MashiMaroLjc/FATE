@@ -9,6 +9,7 @@ import com.webank.ai.fate.core.bean.ReturnResult;
 import com.webank.ai.fate.core.network.grpc.client.ClientPool;
 import com.webank.ai.fate.core.utils.Configuration;
 import com.webank.ai.fate.core.utils.ObjectTransform;
+import com.webank.ai.fate.serving.core.bean.Context;
 import com.webank.ai.fate.serving.core.manager.CacheManager;
 import io.grpc.ManagedChannel;
 import org.apache.logging.log4j.LogManager;
@@ -23,7 +24,24 @@ public abstract class BaseModel {
 
     public abstract int initModel(byte[] protoMeta, byte[] protoParam);
 
-    public abstract Map<String, Object> predict(Map<String, Object> inputData, Map<String, Object> predictParams);
+    public abstract Map<String, Object> predict(Context context , Map<String, Object> inputData, Map<String, Object> predictParams);
+
+    public Map<String, Object> handlePredict(Context context , Map<String, Object> inputData, Map<String, Object> predictParams){
+
+        long  beginTime =  System.currentTimeMillis();
+        try{
+           return  predict(context,inputData,predictParams);
+        }
+        finally {
+            long  endTime = System.currentTimeMillis();
+            long  cost =  endTime-beginTime;
+            Object  caseId = context.getData("caseId");
+            String  className = this.getClass().getClass().getName();
+            LOGGER.info("model {} caseid {} predict cost time {}",className,caseId,endTime-cost);
+        }
+
+
+    }
 
     protected ReturnResult getFederatedPredict(Map<String, Object> federatedParams) {
         FederatedParty srcParty = (FederatedParty) federatedParams.get("local");

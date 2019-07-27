@@ -30,6 +30,8 @@ import com.webank.ai.fate.serving.bean.InferenceRequest;
 import com.webank.ai.fate.serving.bean.ModelNamespaceData;
 import com.webank.ai.fate.serving.bean.PostProcessingResult;
 import com.webank.ai.fate.serving.bean.PreProcessingResult;
+import com.webank.ai.fate.serving.core.bean.BaseContext;
+import com.webank.ai.fate.serving.core.bean.Context;
 import com.webank.ai.fate.serving.core.bean.FederatedInferenceType;
 import com.webank.ai.fate.serving.core.bean.InferenceActionType;
 import com.webank.ai.fate.serving.core.constant.InferenceRetCode;
@@ -155,7 +157,12 @@ public class InferenceManager {
         federatedParams.put("feature_id", featureIds);
         predictParams.put("federatedParams", federatedParams);
 
-        Map<String, Object> modelResult = model.predict(featureData, predictParams);
+        Context context = new BaseContext();
+        context.putData("caseId",inferenceRequest.getCaseid());
+
+
+
+        Map<String, Object> modelResult = model.predict(context,featureData, predictParams);
         boolean getRemotePartyResult = (boolean) federatedParams.getOrDefault("getRemotePartyResult", false);
         ReturnResult federatedResult = (ReturnResult) predictParams.get("federatedResult");
         LOGGER.info(modelResult);
