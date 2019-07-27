@@ -37,7 +37,7 @@ public class MinMaxScale {
                 inputData.put(key, value);
 
             } catch (Exception ex) {
-                ex.printStackTrace();
+             //   ex.printStackTrace();
             }
         }
         return inputData;
