@@ -35,6 +35,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class ServingServer {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -50,12 +52,15 @@ public class ServingServer {
 
         int port = Integer.parseInt(Configuration.getProperty("port"));
         //TODO: Server custom configuration
-        server = ServerBuilder.forPort(port)
+        Executor    executor= Executors.newCachedThreadPool();
+
+        server = ServerBuilder.forPort(port).executor(executor)
                 .addService(ServerInterceptors.intercept(new InferenceService(), new ServiceExceptionHandler()))
                 .addService(ServerInterceptors.intercept(new ModelService(), new ServiceExceptionHandler()))
                 .addService(ServerInterceptors.intercept(new ProxyService(), new ServiceExceptionHandler()))
                 .build();
         LOGGER.info("Server started listening on port: {}, use configuration: {}", port, this.confPath);
+
         server.start();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
