@@ -157,36 +157,24 @@ public class CacheManager {
     }
 
     private static ReturnResult getFromRedisCache(String cacheKey, CacheValueConfig cacheValueConfig) {
-        Jedis jedis = null;
-        try  {
-            jedis = jedisPool.getResource();
+        try (Jedis jedis = jedisPool.getResource()) {
             jedis.select(cacheValueConfig.getDbIndex());
             String cacheValueString = jedis.get(cacheKey);
             ReturnResult returnResultFromExternalCache = (ReturnResult) ObjectTransform.json2Bean(cacheValueString, ReturnResult.class);
             return returnResultFromExternalCache;
-        }finally {
-            if(jedis!=null) {
-                jedis.resetState();
-                jedis.close();
-            }
         }
 
     }
 
     private static void putIntoRedisCache(String cacheKey, CacheValueConfig cacheValueConfig, ReturnResult returnResult) {
         try (Jedis jedis = jedisPool.getResource()) {
-            Pipeline redisPipeline = jedis.pipelined();
-            try {
+                Pipeline redisPipeline = jedis.pipelined();
                 redisPipeline.select(cacheValueConfig.getDbIndex());
                 redisPipeline.set(cacheKey, ObjectTransform.bean2Json(returnResult));
                 redisPipeline.expire(cacheKey, cacheValueConfig.getTtl());
                 redisPipeline.sync();
-            }finally{
-                if(jedis!=null) {
-                    jedis.resetState();
-                    jedis.close();
-                }
-            }
+
+
         }
     }
 
