@@ -84,7 +84,7 @@ public class InferenceService extends InferenceServiceGrpc.InferenceServiceImplB
         }finally {
             long  endTime = System.currentTimeMillis();
 
-            LOGGER.info("receive request caseid {} cost time {} return code {}", inferenceRequest!=null?inferenceRequest.getCaseid():"none",endTime-beginTime,returnResult!=null?returnResult.getRetcode():"none");
+            LOGGER.info("receive request caseid {} type {} cost time {} return code {}", inferenceRequest!=null?inferenceRequest.getCaseid():"none",actionType,endTime-beginTime,returnResult!=null?returnResult.getRetcode():"none");
         }
     }
 }
