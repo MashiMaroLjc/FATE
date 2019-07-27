@@ -65,14 +65,18 @@ public class InferenceManager {
                 InferenceWorkerManager.exetute(new Runnable() {
                     @Override
                     public void run() {
+                        long inferenceBeginTime = System.currentTimeMillis();
+                        try {
 
-                        long  inferenceBeginTime = System.currentTimeMillis();
-                        runInference(inferenceRequest);
-                        LOGGER.info("Inference task exit.");
-                        long  endTime = System.currentTimeMillis();
+                            runInference(inferenceRequest);
+                            LOGGER.info("Inference task exit.");
 
-                        LOGGER.info("request caseId {} cost time {} inference cost time {}",inferenceRequest.getCaseid(),endTime-beginTime,endTime-inferenceBeginTime);
-                    }
+                        }finally {
+                            long endTime = System.currentTimeMillis();
+                            LOGGER.info("request caseId {} cost time {} inference cost time {}",inferenceRequest.getCaseid(),endTime-beginTime,endTime-inferenceBeginTime);
+
+                        }
+                        }
 
                 });
                 ReturnResult startInferenceJobResult = new ReturnResult();
