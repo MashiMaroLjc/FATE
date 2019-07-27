@@ -54,7 +54,7 @@ public class PipelineTask {
         LOGGER.info("Start Pipeline predict use {} model node.", this.pipeLineNode.size());
         for (int i = 0; i < this.pipeLineNode.size(); i++) {
             LOGGER.info(this.pipeLineNode.get(i).getClass().getName());
-            inputData = this.pipeLineNode.get(i).predict(context,inputData, predictParams);
+            inputData = this.pipeLineNode.get(i).handlePredict(context,inputData, predictParams);
             LOGGER.info("finish mlNone:{}", i);
         }
         LOGGER.info("Finish Pipeline predict");

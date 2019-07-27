@@ -246,6 +246,7 @@ public class InferenceManager {
         LOGGER.info("use model to inference on {} {}, id: {}, version: {}", party.getRole(), party.getPartyId(), modelInfo.getNamespace(), modelInfo.getName());
         Map<String, Object> predictParams = new HashMap<>();
         predictParams.put("federatedParams", federatedParams);
+        Context  context = new BaseContext();
         try {
             ReturnResult getFeatureDataResult = getFeatureData(featureIds);
             if (getFeatureDataResult.getRetcode() == InferenceRetCode.OK) {
@@ -255,7 +256,7 @@ public class InferenceManager {
                     logInference(federatedParams, party, federatedRoles, returnResult, 0, false, false);
                     return returnResult;
                 }
-                Map<String, Object> result = model.predict(getFeatureDataResult.getData(), predictParams);
+                Map<String, Object> result = model.predict(context,getFeatureDataResult.getData(), predictParams);
                 returnResult.setRetcode(InferenceRetCode.OK);
                 returnResult.setData(result);
                 billing = true;
