@@ -50,7 +50,7 @@ public class InferenceManager {
         long inferenceBeginTime = System.currentTimeMillis();
         ReturnResult inferenceResultFromCache = CacheManager.getInferenceResultCache(inferenceRequest.getAppid(), inferenceRequest.getCaseid());
         if (inferenceResultFromCache != null) {
-            LOGGER.info("Get inference result from cache.");
+
             LOGGER.info("request caseId {} cost time {}  hit cache true",inferenceRequest.getCaseid(),System.currentTimeMillis()-inferenceBeginTime);
 
             return inferenceResultFromCache;
@@ -70,13 +70,11 @@ public class InferenceManager {
                     public void run() {
 
                         try {
-
                             runInference(inferenceRequest);
-                            LOGGER.info("Inference task exit.");
 
                         }finally {
                             long endTime = System.currentTimeMillis();
-                            LOGGER.info("request caseId {} cost time {} inference cost time {} hit cache false",inferenceRequest.getCaseid(),endTime-beginTime,endTime-inferenceBeginTime);
+                            LOGGER.info("request caseId {} cost time {} inference cost time {} hit cache false",inferenceRequest.getCaseid(),endTime-inferenceBeginTime,endTime-beginTime);
 
                         }
                         }
