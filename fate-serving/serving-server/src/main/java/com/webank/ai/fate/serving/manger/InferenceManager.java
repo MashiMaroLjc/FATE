@@ -51,6 +51,7 @@ public class InferenceManager {
     public static ReturnResult inference(InferenceRequest inferenceRequest, InferenceActionType inferenceActionType) {
         long inferenceBeginTime = System.currentTimeMillis();
         ReturnResult inferenceResultFromCache = CacheManager.getInferenceResultCache(inferenceRequest.getAppid(), inferenceRequest.getCaseid());
+        LOGGER.info("caseid {} query cache cost {}",inferenceRequest.getCaseid(),System.currentTimeMillis()-inferenceBeginTime);
         if (inferenceResultFromCache != null) {
             LOGGER.info("request caseId {} cost time {}  hit cache true",inferenceRequest.getCaseid(),System.currentTimeMillis()-inferenceBeginTime);
             return inferenceResultFromCache;
