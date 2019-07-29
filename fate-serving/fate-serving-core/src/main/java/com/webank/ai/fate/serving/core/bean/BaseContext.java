@@ -54,13 +54,10 @@ public class BaseContext<Req extends Request,Resp extends ReturnResult> implemen
 
     @Override
     public void postProcess(Req  req,Resp  resp) {
-
         long  now = System.currentTimeMillis();
-        LOGGER.info("caseid :{} type :{} costtime :{} return_code :{} req :{}", req!=null?req.getCaseid():"",actionType,now-timestamp,
-                resp!=null?resp.getRetcode():"",
+        LOGGER.info("caseid {} type {} costtime {} return_code {} req {}", req!=null?req.getCaseid():"NONE",actionType,now-timestamp,
+                resp!=null?resp.getRetcode():"NONE",
                 this.dataMap.get(Dict.ORIGIN_REQUEST)!=null?this.dataMap.get(Dict.ORIGIN_REQUEST):"");
-
-
 
     }
 
