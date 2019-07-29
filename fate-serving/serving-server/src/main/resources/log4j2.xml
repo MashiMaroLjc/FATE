@@ -15,7 +15,6 @@
 
 
 
-
         <RollingFile name="inference"
                      fileName="${logdir}/${project}-${module}-inference.log"
                      filePattern="${logdir}/%d{yyyy-MM-dd}/${project}-${module}-inference.log.%d{yyyy-MM-dd}">
@@ -116,30 +115,30 @@
 
     <Loggers>
 
-        <AsyncLogger name="inferenceAudit" level="info" includeLocation="true" additivity="false">
+        <Logger name="inferenceAudit" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="inferenceAudit"/>
-        </AsyncLogger>
+        </Logger>
 
-        <AsyncLogger name="inference" level="info" includeLocation="true" additivity="false">
+        <Logger name="inference" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="inference"/>
-        </AsyncLogger>
+        </Logger>
 
-        <AsyncLogger name="stat" level="info" includeLocation="true" additivity="false">
+        <Logger name="stat" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="stat"/>
-        </AsyncLogger>
+        </Logger>
 
-        <AsyncLogger name="access" level="info" includeLocation="true" additivity="false">
+        <Logger name="access" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="access"/>
-        </AsyncLogger>
+        </Logger>
 
-        <AsyncLogger name="flow" level="info" includeLocation="true" additivity="false">
+        <Logger name="flow" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="flow"/>
-        </AsyncLogger>
+        </Logger>
 
 
-        <AsyncRoot level="info" includeLocation="true">
+        <Root level="info" includeLocation="true">
             <AppenderRef ref="info" level="info"/>
             <AppenderRef ref="ErrorLog" level="error"/>
-        </AsyncRoot>
+        </Root>
     </Loggers>
 </Configuration>
