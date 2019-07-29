@@ -1,27 +1,41 @@
 package com.webank.ai.fate.serving.core.bean;
 
 import com.google.common.collect.Maps;
+import com.webank.ai.fate.core.bean.ReturnResult;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 
 
-public class BaseContext implements Context {
+public class BaseContext<Req extends Request,Resp extends ReturnResult> implements Context<Req,Resp> {
 
-    final String CASEID= "caseId";
+    static final   String  LOGGER_NAME =  "flow";
 
-    Map data = Maps.newHashMap();
-//    @Override
-//    public Object getData(Object key) {
-//        return  data.get(key);
-//    }
-//    @Override
-//    public  void putData(Object  key,Object value){
-//        data.put(key,value);
-//    }
+    private static final Logger LOGGER = LogManager.getLogger(LOGGER_NAME);
+
+    InferenceActionType actionType;
+
+    final long  timestamp = System.currentTimeMillis();
+
+    Map dataMap = Maps.newHashMap();
+
+    @Override
+    public Object getData(Object key) {
+        return null;
+    }
+
+    @Override
+    public void putData(Object key, Object data) {
+
+        dataMap.put(key,data);
+
+    }
+
     @Override
     public String getCaseId() {
-        if(data.get(CASEID)!=null){
-            return  data.get(CASEID).toString();
+        if(dataMap.get(Dict.CASEID)!=null){
+            return  dataMap.get(Dict.CASEID).toString();
         }
         else {
             return null;
@@ -30,6 +44,29 @@ public class BaseContext implements Context {
 
     @Override
     public void setCaseId(String caseId){
-        data.put(CASEID,caseId);
+        dataMap.put(Dict.CASEID,caseId);
+    }
+
+    @Override
+    public long getTimeStamp() {
+        return timestamp;
+    }
+
+    @Override
+    public void postProcess(Req  req,Resp  resp) {
+
+        long  now = System.currentTimeMillis();
+        LOGGER.info("caseid :{} type :{} costtime :{} return_code :{} req :{}", req!=null?req.getCaseid():"",actionType,now-timestamp,
+                resp!=null?resp.getRetcode():"",
+                this.dataMap.get(Dict.ORIGIN_REQUEST)!=null?this.dataMap.get(Dict.ORIGIN_REQUEST):"");
+
+
+
+    }
+
+    @Override
+    public void setActionType(InferenceActionType actionType) {
+        this.actionType=  actionType;
+
     }
 }

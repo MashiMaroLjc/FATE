@@ -48,7 +48,7 @@ import java.util.Map;
 public class InferenceManager {
     private static final Logger LOGGER = LogManager.getLogger();
 
-    public static ReturnResult inference(InferenceRequest inferenceRequest, InferenceActionType inferenceActionType) {
+    public static ReturnResult inference(Context  context,InferenceRequest inferenceRequest, InferenceActionType inferenceActionType) {
         long inferenceBeginTime = System.currentTimeMillis();
         ReturnResult inferenceResultFromCache = CacheManager.getInferenceResultCache(inferenceRequest.getAppid(), inferenceRequest.getCaseid());
         LOGGER.info("caseid {} query cache cost {}",inferenceRequest.getCaseid(),System.currentTimeMillis()-inferenceBeginTime);
@@ -58,7 +58,7 @@ public class InferenceManager {
         }
         switch (inferenceActionType) {
             case SYNC_RUN:
-                ReturnResult inferenceResult = runInference(inferenceRequest);
+                ReturnResult inferenceResult = runInference(  context,inferenceRequest);
                 return inferenceResult;
             case GET_RESULT:
                 ReturnResult noCacheInferenceResult = new ReturnResult();
@@ -70,13 +70,14 @@ public class InferenceManager {
                     @Override
                     public void run() {
 
+
+                        ReturnResult inferenceResult=null;
                         try {
-                            runInference(inferenceRequest);
+                             inferenceResult=   runInference(context,inferenceRequest);
 
                         }finally {
                             long endTime = System.currentTimeMillis();
-                            LOGGER.info("request caseId {} cost time {} inference cost time {} hit cache false",inferenceRequest.getCaseid(),endTime-inferenceBeginTime,endTime-beginTime);
-
+                            context.postProcess(inferenceRequest,inferenceResult);
                         }
                         }
 
@@ -92,9 +93,9 @@ public class InferenceManager {
         }
     }
 
-    public static ReturnResult runInference(InferenceRequest inferenceRequest) {
+    public static ReturnResult runInference(Context  context ,InferenceRequest inferenceRequest) {
         long startTime = System.currentTimeMillis();
-        Context context = new BaseContext();
+
         context.setCaseId(inferenceRequest.getCaseid());
         ReturnResult inferenceResult = new ReturnResult();
         inferenceResult.setCaseid(inferenceRequest.getCaseid());

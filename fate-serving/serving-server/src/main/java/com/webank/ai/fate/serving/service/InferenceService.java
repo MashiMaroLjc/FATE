@@ -22,6 +22,9 @@ import com.webank.ai.fate.api.serving.InferenceServiceProto.InferenceMessage;
 import com.webank.ai.fate.core.bean.ReturnResult;
 import com.webank.ai.fate.core.utils.ObjectTransform;
 import com.webank.ai.fate.serving.bean.InferenceRequest;
+import com.webank.ai.fate.serving.core.bean.BaseContext;
+import com.webank.ai.fate.serving.core.bean.Context;
+import com.webank.ai.fate.serving.core.bean.Dict;
 import com.webank.ai.fate.serving.core.bean.InferenceActionType;
 import com.webank.ai.fate.serving.core.constant.InferenceRetCode;
 import com.webank.ai.fate.serving.manger.InferenceManager;
@@ -54,16 +57,18 @@ public class InferenceService extends InferenceServiceGrpc.InferenceServiceImplB
         InferenceMessage.Builder response = InferenceMessage.newBuilder();
         ReturnResult returnResult = new ReturnResult();
 
-        long beginTime = System.currentTimeMillis();
         InferenceRequest inferenceRequest =null;
+        Context context = new BaseContext<InferenceRequest,ReturnResult>();
+
         try{
         try {
-            if (accessLOGGER.isDebugEnabled()) {
-                accessLOGGER.debug(req.getBody().toStringUtf8());
-            }
+            context.putData(Dict.ORIGIN_REQUEST,req.getBody().toStringUtf8());
             inferenceRequest = (InferenceRequest) ObjectTransform.json2Bean(req.getBody().toStringUtf8(), InferenceRequest.class);
+
             if (inferenceRequest != null) {
-                returnResult = InferenceManager.inference(inferenceRequest, actionType);
+                context.setCaseId(inferenceRequest.getCaseid());
+                context.setActionType(actionType);
+                returnResult = InferenceManager.inference(context,inferenceRequest, actionType);
                 if (returnResult.getRetcode() != InferenceRetCode.OK) {
                     LOGGER.warn("inference {} failed: \n{}", actionType, req.getBody().toStringUtf8());
                 }
@@ -77,22 +82,15 @@ public class InferenceService extends InferenceServiceGrpc.InferenceServiceImplB
             LOGGER.error(String.format("inference system error:\n%s", req.getBody().toStringUtf8()), e);
         }
 
-        long beginTime2 = System.currentTimeMillis();
+
 
         response.setBody(ByteString.copyFrom(ObjectTransform.bean2Json(returnResult).getBytes()));
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
 
-        long  endTime2 = System.currentTimeMillis();
-
-        LOGGER.info(" caseid {} flush to remote  cost time {} ", inferenceRequest!=null?inferenceRequest.getCaseid():"none",endTime2-beginTime2);
-
-
 
         }finally {
-            long  endTime = System.currentTimeMillis();
-
-            LOGGER.info("receive request caseid {} type {} cost time {} return code {}", inferenceRequest!=null?inferenceRequest.getCaseid():"none",actionType,endTime-beginTime,returnResult!=null?returnResult.getRetcode():"none");
+            context.postProcess(inferenceRequest,returnResult);
         }
     }
 }
