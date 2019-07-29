@@ -115,30 +115,30 @@
 
     <Loggers>
 
-        <Logger name="inferenceAudit" level="info" includeLocation="true" additivity="false">
+        <AsyncLogger name="inferenceAudit" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="inferenceAudit"/>
-        </Logger>
+        </AsyncLogger>
 
-        <Logger name="inference" level="info" includeLocation="true" additivity="false">
+        <AsyncLogger name="inference" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="inference"/>
-        </Logger>
+        </AsyncLogger>
 
-        <Logger name="stat" level="info" includeLocation="true" additivity="false">
+        <AsyncLogger name="stat" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="stat"/>
-        </Logger>
+        </AsyncLogger>
 
-        <Logger name="access" level="info" includeLocation="true" additivity="false">
+        <AsyncLogger name="access" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="access"/>
-        </Logger>
+        </AsyncLogger>
 
-        <Logger name="flow" level="info" includeLocation="true" additivity="false">
+        <AsyncLogger name="flow" level="info" includeLocation="true" additivity="false">
             <AppenderRef ref="flow"/>
-        </Logger>
+        </AsyncLogger>
 
 
-        <Root level="info" includeLocation="true">
+        <AsyncRoot level="info" includeLocation="true">
             <AppenderRef ref="info" level="info"/>
             <AppenderRef ref="ErrorLog" level="error"/>
-        </Root>
+        </AsyncRoot>
     </Loggers>
 </Configuration>
