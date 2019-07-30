@@ -48,12 +48,11 @@ public abstract class BaseModel {
         FederatedRoles federatedRoles = (FederatedRoles) federatedParams.get("role");
         Map<String, Object> featureIds = (Map<String, Object>) federatedParams.get("feature_id");
 
-
         //TODO: foreach
         FederatedParty dstParty = new FederatedParty("host", federatedRoles.getRole("host").get(0));
         ReturnResult remoteResultFromCache = CacheManager.getRemoteModelInferenceResult(dstParty, federatedRoles, featureIds);
         if (remoteResultFromCache != null) {
-            LOGGER.info("Get remote party model inference result from cache.");
+            LOGGER.info("caseid {} get remote party model inference result from cache.",context.getCaseId());
             federatedParams.put("getRemotePartyResult", false);
             return remoteResultFromCache;
         }
@@ -70,7 +69,7 @@ public abstract class BaseModel {
         federatedParams.put("getRemotePartyResult", true);
         ReturnResult remoteResult = getFederatedPredictFromRemote(context,srcParty, dstParty, requestData);
         CacheManager.putRemoteModelInferenceResult(dstParty, federatedRoles, featureIds, remoteResult);
-        LOGGER.info("Get remote party model inference result from federated request.");
+        LOGGER.info("caseid {} get remote party model inference result from federated request." ,context.getCaseId());
         return remoteResult;
     }
 
