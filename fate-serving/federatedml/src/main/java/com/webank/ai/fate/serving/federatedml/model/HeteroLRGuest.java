@@ -22,13 +22,18 @@ public class HeteroLRGuest extends HeteroLR {
         Map<String, Object> result = new HashMap<>();
         Map<String, Double> forwardRet = forward(inputData);
         double score = forwardRet.get("score");
-        LOGGER.info("guest score:{}", score);
+        LOGGER.info("caseid {} guest score:{}", context.getCaseId(),score);
 
         try {
             ReturnResult hostPredictResponse = this.getFederatedPredict(context,(Map<String, Object>) predictParams.get("federatedParams"));
             predictParams.put("federatedResult", hostPredictResponse);
-            double hostScore = (double) hostPredictResponse.getData().get("score");
-            LOGGER.info("host score:{}", hostScore);
+            double hostScore =0;
+            if(hostPredictResponse!=null&&hostPredictResponse.getData()!=null) {
+                 hostScore = (double) hostPredictResponse.getData().get("score");
+                LOGGER.info("caseid {} host score:{}", context.getCaseId(), hostScore);
+            }else{
+                LOGGER.info("caseid {} has no host score",  hostScore);
+            }
             score += hostScore;
         } catch (Exception ex) {
             LOGGER.error("get host predict failed:", ex);
