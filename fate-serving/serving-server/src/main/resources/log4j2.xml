@@ -99,7 +99,7 @@
         </RollingFile>
 
         <RollingFile name="ErrorLog"
-                     fileName="${logdir}/error.log"
+                     fileName="${logdir}/%d{yyyy-MM-dd}/error.log"
                      filePattern="${logdir}/error.log.%d{yyyy-MM-dd}.log">
             <PatternLayout charset="UTF-8"
                            pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} [%-5p] %c{1.}(%F:%L) - %m%n"/>

@@ -27,6 +27,7 @@ import com.webank.ai.fate.serving.core.bean.Context;
 import com.webank.ai.fate.serving.core.bean.Dict;
 import com.webank.ai.fate.serving.core.bean.InferenceActionType;
 import com.webank.ai.fate.serving.core.constant.InferenceRetCode;
+import com.webank.ai.fate.serving.core.monitor.WatchDog;
 import com.webank.ai.fate.serving.manger.InferenceManager;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.StringUtils;
@@ -58,8 +59,9 @@ public class InferenceService extends InferenceServiceGrpc.InferenceServiceImplB
         ReturnResult returnResult = new ReturnResult();
 
         InferenceRequest inferenceRequest =null;
-        Context context = new BaseContext<InferenceRequest,ReturnResult>();
-
+        Context context = new BaseContext();
+        context.preProcess();
+        WatchDog.enter(context);
         try{
         try {
             context.putData(Dict.ORIGIN_REQUEST,req.getBody().toStringUtf8());
@@ -67,10 +69,10 @@ public class InferenceService extends InferenceServiceGrpc.InferenceServiceImplB
 
             if (inferenceRequest != null) {
                 context.setCaseId(inferenceRequest.getCaseid());
-                context.setActionType(actionType);
+                context.setActionType(actionType.name());
                 returnResult = InferenceManager.inference(context,inferenceRequest, actionType);
                 if (returnResult.getRetcode() != InferenceRetCode.OK) {
-                    LOGGER.warn("inference {} failed: \n{}", actionType, req.getBody().toStringUtf8());
+                    LOGGER.error("caseid {} inference {} failed: \n{}",context.getCaseId(), actionType, req.getBody().toStringUtf8());
                 }
             } else {
 
@@ -82,14 +84,11 @@ public class InferenceService extends InferenceServiceGrpc.InferenceServiceImplB
             LOGGER.error(String.format("inference system error:\n%s", req.getBody().toStringUtf8()), e);
         }
 
-
-
         response.setBody(ByteString.copyFrom(ObjectTransform.bean2Json(returnResult).getBytes()));
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
-
-
         }finally {
+            WatchDog.quit(context);
             context.postProcess(inferenceRequest,returnResult);
         }
     }

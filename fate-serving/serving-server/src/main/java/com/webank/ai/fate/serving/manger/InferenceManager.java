@@ -36,6 +36,7 @@ import com.webank.ai.fate.serving.core.bean.FederatedInferenceType;
 import com.webank.ai.fate.serving.core.bean.InferenceActionType;
 import com.webank.ai.fate.serving.core.constant.InferenceRetCode;
 import com.webank.ai.fate.serving.core.manager.CacheManager;
+import com.webank.ai.fate.serving.core.monitor.WatchDog;
 import com.webank.ai.fate.serving.federatedml.PipelineTask;
 import com.webank.ai.fate.serving.utils.InferenceUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -73,11 +74,13 @@ public class InferenceManager {
 
                         ReturnResult inferenceResult=null;
                         try {
+                             WatchDog.enter(context);
                              inferenceResult=   runInference(context,inferenceRequest);
 
                         }finally {
-                            long endTime = System.currentTimeMillis();
+                            WatchDog.quit(context);
                             context.postProcess(inferenceRequest,inferenceResult);
+
                         }
                         }
 
@@ -221,7 +224,7 @@ public class InferenceManager {
         return inferenceResult;
     }
 
-    public static ReturnResult federatedInference(Map<String, Object> federatedParams) {
+    public static ReturnResult federatedInference(Context  context,Map<String, Object> federatedParams) {
         long startTime = System.currentTimeMillis();
         ReturnResult returnResult = new ReturnResult();
         //TODO: Very ugly, need to be optimized
@@ -248,7 +251,7 @@ public class InferenceManager {
         LOGGER.info("use model to inference on {} {}, id: {}, version: {}", party.getRole(), party.getPartyId(), modelInfo.getNamespace(), modelInfo.getName());
         Map<String, Object> predictParams = new HashMap<>();
         predictParams.put("federatedParams", federatedParams);
-        Context  context = new BaseContext();
+
         try {
             ReturnResult getFeatureDataResult = getFeatureData(featureIds);
             if (getFeatureDataResult.getRetcode() == InferenceRetCode.OK) {
@@ -274,7 +277,6 @@ public class InferenceManager {
         long federatedInferenceElapsed = endTime - startTime;
         logInference(federatedParams, party, federatedRoles, returnResult, federatedInferenceElapsed, false, billing);
         LOGGER.info(returnResult.getData());
-        LOGGER.info("federated inference successfully");
         return returnResult;
     }
 
