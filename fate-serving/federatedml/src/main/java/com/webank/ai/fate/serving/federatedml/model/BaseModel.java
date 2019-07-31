@@ -79,7 +79,7 @@ public abstract class BaseModel {
 
 
         long  beginTime = System.currentTimeMillis();
-
+        ReturnResult remoteResult=null;
         try {
 
             Proxy.Packet.Builder packetBuilder = Proxy.Packet.newBuilder();
@@ -106,10 +106,17 @@ public abstract class BaseModel {
 
 
             GrpcConnectionPool  grpcConnectionPool =GrpcConnectionPool.getPool();
-            ManagedChannel channel1 = grpcConnectionPool.getManagedChannel(Configuration.getProperty("proxy"));
-            DataTransferServiceGrpc.DataTransferServiceBlockingStub stub1 = DataTransferServiceGrpc.newBlockingStub(channel1);
-            Proxy.Packet packet = stub1.unaryCall(packetBuilder.build());
-            ReturnResult remoteResult = (ReturnResult) ObjectTransform.json2Bean(packet.getBody().getValue().toStringUtf8(), ReturnResult.class);
+            String  address =  Configuration.getProperty("proxy");
+            ManagedChannel channel1 = grpcConnectionPool.getManagedChannel(address);
+            try {
+                DataTransferServiceGrpc.DataTransferServiceBlockingStub stub1 = DataTransferServiceGrpc.newBlockingStub(channel1);
+                Proxy.Packet packet = stub1.unaryCall(packetBuilder.build());
+                remoteResult = (ReturnResult) ObjectTransform.json2Bean(packet.getBody().getValue().toStringUtf8(), ReturnResult.class);
+
+            }finally {
+                grpcConnectionPool.returnPool(channel1,address);
+            }
+
             return remoteResult;
         } catch (Exception e) {
             LOGGER.error("getFederatedPredictFromRemote error",e);
@@ -117,7 +124,7 @@ public abstract class BaseModel {
         } finally{
             long   end = System.currentTimeMillis();
             long  cost = end -  beginTime;
-            LOGGER.info("caseid {} getFederatedPredictFromRemote cost {}");
+            LOGGER.info("caseid {} getFederatedPredictFromRemote cost {} remote retcode {}" ,context.getCaseId(),cost,remoteResult!=null?remoteResult.getRetcode():"NONE");
         }
 
 
