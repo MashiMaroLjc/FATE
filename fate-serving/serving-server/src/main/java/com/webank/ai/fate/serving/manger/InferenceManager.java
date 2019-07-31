@@ -177,6 +177,10 @@ public class InferenceManager {
                 modelResult.put("retcode", federatedResult.getRetcode());
             }
             postProcessingResult = getPostProcessedResult(context,featureData, modelResult);
+
+
+
+
         } catch (Exception ex) {
             LOGGER.error("model result postprocessing failed", ex);
             inferenceResult.setRetcode(InferenceRetCode.COMPUTE_ERROR);
@@ -213,7 +217,7 @@ public class InferenceManager {
 
         if (inferenceResult.getRetcode() == 0) {
             CacheManager.putInferenceResultCache(context ,inferenceRequest.getAppid(), inferenceRequest.getCaseid(), inferenceResult);
-            LOGGER.info("case {} inference successfully use {} ms.", inferenceRequest.getCaseid(), inferenceElapsed);
+            LOGGER.info("case {} inference successfully use {} ms result {}", inferenceRequest.getCaseid(), inferenceElapsed,inferenceResult.getData());
         } else {
             LOGGER.info("case {} failed inference, retcode is {}, use {} ms.", inferenceRequest.getCaseid(), inferenceResult.getRetcode(), inferenceElapsed);
         }
@@ -301,6 +305,8 @@ public class InferenceManager {
             String classPath = PostProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePostProcessingAdapter");
             PostProcessing postProcessing = (PostProcessing) InferenceUtils.getClassByName(classPath);
             return postProcessing.getResult(featureData, modelResult);
+
+
         }finally {
             long  endTime =  System.currentTimeMillis();
             LOGGER.info("postprocess caseid {} cost time {}",context.getCaseId(),endTime-beginTime);
