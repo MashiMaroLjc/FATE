@@ -10,6 +10,7 @@ import com.webank.ai.fate.core.network.grpc.client.GrpcClientPool;
 import com.webank.ai.fate.core.utils.Configuration;
 import com.webank.ai.fate.core.utils.ObjectTransform;
 import com.webank.ai.fate.serving.core.bean.Context;
+import com.webank.ai.fate.serving.core.bean.GrpcConnectionPool;
 import com.webank.ai.fate.serving.core.manager.CacheManager;
 import io.grpc.ManagedChannel;
 import org.apache.logging.log4j.LogManager;
@@ -103,17 +104,20 @@ public abstract class BaseModel {
             metaDataBuilder.setConf(Proxy.Conf.newBuilder().setOverallTimeout(60 * 1000));
             packetBuilder.setHeader(metaDataBuilder.build());
 
-            ManagedChannel channel1 = GrpcClientPool.getChannel(Configuration.getProperty("proxy"));
+
+            GrpcConnectionPool  grpcConnectionPool =GrpcConnectionPool.getPool();
+            ManagedChannel channel1 = grpcConnectionPool.getManagedChannel(Configuration.getProperty("proxy"));
             DataTransferServiceGrpc.DataTransferServiceBlockingStub stub1 = DataTransferServiceGrpc.newBlockingStub(channel1);
             Proxy.Packet packet = stub1.unaryCall(packetBuilder.build());
             ReturnResult remoteResult = (ReturnResult) ObjectTransform.json2Bean(packet.getBody().getValue().toStringUtf8(), ReturnResult.class);
             return remoteResult;
-        }finally{
+        } catch (Exception e) {
+            LOGGER.error("getFederatedPredictFromRemote error",e);
+            throw  new RuntimeException(e);
+        } finally{
             long   end = System.currentTimeMillis();
             long  cost = end -  beginTime;
             LOGGER.info("caseid {} getFederatedPredictFromRemote cost {}");
-
-
         }
 
 
