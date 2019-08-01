@@ -30,10 +30,7 @@ import com.webank.ai.fate.serving.bean.InferenceRequest;
 import com.webank.ai.fate.serving.bean.ModelNamespaceData;
 import com.webank.ai.fate.serving.bean.PostProcessingResult;
 import com.webank.ai.fate.serving.bean.PreProcessingResult;
-import com.webank.ai.fate.serving.core.bean.BaseContext;
-import com.webank.ai.fate.serving.core.bean.Context;
-import com.webank.ai.fate.serving.core.bean.FederatedInferenceType;
-import com.webank.ai.fate.serving.core.bean.InferenceActionType;
+import com.webank.ai.fate.serving.core.bean.*;
 import com.webank.ai.fate.serving.core.constant.InferenceRetCode;
 import com.webank.ai.fate.serving.core.manager.CacheManager;
 import com.webank.ai.fate.serving.core.monitor.WatchDog;
@@ -48,6 +45,34 @@ import java.util.Map;
 
 public class InferenceManager {
     private static final Logger LOGGER = LogManager.getLogger();
+
+    long beginTime = System.currentTimeMillis();
+//        try {
+//
+//        String classPath = PostProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePostProcessingAdapter");
+//        PostProcessing postProcessing = (PostProcessing) InferenceUtils.getClassByName(classPath);
+//        return postProcessing.getResult(context,featureData, modelResult);
+//    }finally {
+//        long  endTime =  System.currentTimeMillis();
+//        LOGGER.info("postprocess caseid {} cost time {}",context.getCaseId(),endTime-beginTime);
+//    }
+
+
+    static  PostProcessing   postProcessing ;
+
+    static  PreProcessing    preProcessing;
+    static {
+
+        String classPathPre = PostProcessing.class.getPackage().getName();
+        String postClassPath = classPathPre + "." + Configuration.getProperty(Dict.POST_PROCESSING_CONFIG);
+         postProcessing = (PostProcessing) InferenceUtils.getClassByName(postClassPath);
+        String preClassPath = classPathPre + "." + Configuration.getProperty(Dict.PRE_PROCESSING_CONFIG);
+        preProcessing =  (PreProcessing) InferenceUtils.getClassByName(preClassPath);
+
+
+    }
+
+
 
     public static ReturnResult inference(Context  context,InferenceRequest inferenceRequest, InferenceActionType inferenceActionType) {
         long inferenceBeginTime = System.currentTimeMillis();
@@ -163,10 +188,6 @@ public class InferenceManager {
         federatedParams.put("feature_id", featureIds);
         predictParams.put("federatedParams", federatedParams);
 
-
-
-
-
         Map<String, Object> modelResult = model.predict(context,featureData, predictParams);
         boolean getRemotePartyResult = (boolean) federatedParams.getOrDefault("getRemotePartyResult", false);
         ReturnResult federatedResult = (ReturnResult) predictParams.get("federatedResult");
@@ -177,8 +198,6 @@ public class InferenceManager {
                 modelResult.put("retcode", federatedResult.getRetcode());
             }
             postProcessingResult = getPostProcessedResult(context,featureData, modelResult);
-
-
 
 
         } catch (Exception ex) {
@@ -208,12 +227,8 @@ public class InferenceManager {
         long endTime = System.currentTimeMillis();
         long inferenceElapsed = endTime - startTime;
         logInference(inferenceRequest, modelNamespaceData, inferenceResult, inferenceElapsed, getRemotePartyResult, billing);
-        if(inferenceResult.getRetcode() != 0){
-            Map<String,Object>  warnMap = Maps.newHashMap();
-            warnMap.put("preCode",inferenceResult.getRetcode());
-            inferenceResult.setWarn(warnMap);
-            inferenceResult.setRetcode(0);
-        }
+
+        inferenceResult=postProcessing.handleResult(context,inferenceResult);
 
         if (inferenceResult.getRetcode() == 0) {
             CacheManager.putInferenceResultCache(context ,inferenceRequest.getAppid(), inferenceRequest.getCaseid(), inferenceResult);
@@ -221,8 +236,6 @@ public class InferenceManager {
         } else {
             LOGGER.info("case {} failed inference, retcode is {}, use {} ms.", inferenceRequest.getCaseid(), inferenceResult.getRetcode(), inferenceElapsed);
         }
-
-
 
 
         return inferenceResult;
@@ -287,10 +300,7 @@ public class InferenceManager {
     private static PreProcessingResult getPreProcessingFeatureData(Context  context ,Map<String, Object> originFeatureData) {
         long beginTime = System.currentTimeMillis();
         try {
-            String classPath = PreProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePreProcessingAdapter");
-            PreProcessing preProcessing = (PreProcessing) InferenceUtils.getClassByName(classPath);
-            long endTime = System.currentTimeMillis();
-            return preProcessing.getResult(ObjectTransform.bean2Json(originFeatureData));
+            return preProcessing.getResult(context ,ObjectTransform.bean2Json(originFeatureData));
         }finally {
             long  endTime =  System.currentTimeMillis();
             LOGGER.info("preprocess caseid {} cost time {}",context.getCaseId(),endTime-beginTime);
@@ -301,18 +311,12 @@ public class InferenceManager {
     private static PostProcessingResult getPostProcessedResult(Context  context ,Map<String, Object> featureData, Map<String, Object> modelResult) {
         long beginTime = System.currentTimeMillis();
         try {
-
-            String classPath = PostProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePostProcessingAdapter");
-            PostProcessing postProcessing = (PostProcessing) InferenceUtils.getClassByName(classPath);
-            return postProcessing.getResult(featureData, modelResult);
-
-
+            return postProcessing.getResult(context,featureData, modelResult);
         }finally {
             long  endTime =  System.currentTimeMillis();
             LOGGER.info("postprocess caseid {} cost time {}",context.getCaseId(),endTime-beginTime);
         }
     }
-
     private static ReturnResult getFeatureData(Map<String, Object> featureIds) {
         ReturnResult defaultReturnResult = new ReturnResult();
         String classPath = FeatureData.class.getPackage().getName() + "." + Configuration.getProperty("OnlineDataAccessAdapter");

@@ -7,5 +7,7 @@ public class Dict {
     public  static  final String CASEID= "caseid";
     public  static  final String SCORE = "score";
     public  static  final String NONE = "NONE";
+    public  static  final String POST_PROCESSING_CONFIG="InferencePostProcessingAdapter";
+    public  static  final String PRE_PROCESSING_CONFIG="InferencePreProcessingAdapter";
 
 }
