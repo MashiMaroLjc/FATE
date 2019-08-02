@@ -71,12 +71,12 @@ public class BaseContext<Req ,Resp extends ReturnResult> implements Context<Req,
             String reqData = this.dataMap.get(Dict.ORIGIN_REQUEST) != null ? this.dataMap.get(Dict.ORIGIN_REQUEST).toString() : "";
             reqData = "";
             if (req instanceof Request) {
-                LOGGER.info("caseid {} type {} costtime {} return_code {} req {} dog {}", req != null ? ((Request) req).getCaseid() : "NONE", actionType, now - timestamp,
+                LOGGER.info("{}|{}|{}|{}|{}|{}", req != null ? ((Request) req).getCaseid() : "NONE", actionType, now - timestamp,
                         resp != null ? resp.getRetcode() : "NONE", reqData, WatchDog.get()
                 );
             }
             if (req instanceof Map) {
-                LOGGER.info("caseid {} type {} costtime {} return_code {} req {} dog {}",
+                LOGGER.info("{}|{}|{}|{}|{}|{}",
                         req != null ? ((Map) req).get(Dict.CASEID) : "NONE", actionType, now - timestamp,
                         resp != null ? resp.getRetcode() : "NONE", reqData,WatchDog.get()
                 );
