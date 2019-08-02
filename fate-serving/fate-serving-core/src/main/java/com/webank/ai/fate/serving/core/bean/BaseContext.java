@@ -2,6 +2,7 @@ package com.webank.ai.fate.serving.core.bean;
 
 import com.google.common.collect.Maps;
 import com.webank.ai.fate.core.bean.ReturnResult;
+import com.webank.ai.fate.serving.core.monitor.WatchDog;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,7 +31,10 @@ public class BaseContext<Req ,Resp extends ReturnResult> implements Context<Req,
         return null;
     }
 
-
+    @Override
+    public Object getDataOrDefault(Object  key,Object defaultValue) {
+       return  dataMap.getOrDefault(  key, defaultValue);
+    }
 
 
     @Override
@@ -67,16 +71,18 @@ public class BaseContext<Req ,Resp extends ReturnResult> implements Context<Req,
             String reqData = this.dataMap.get(Dict.ORIGIN_REQUEST) != null ? this.dataMap.get(Dict.ORIGIN_REQUEST).toString() : "";
             reqData = "";
             if (req instanceof Request) {
-                LOGGER.info("caseid {} type {} costtime {} return_code {} req {} ", req != null ? ((Request) req).getCaseid() : "NONE", actionType, now - timestamp,
-                        resp != null ? resp.getRetcode() : "NONE", reqData
+                LOGGER.info("caseid {} type {} costtime {} return_code {} req {} dog {}", req != null ? ((Request) req).getCaseid() : "NONE", actionType, now - timestamp,
+                        resp != null ? resp.getRetcode() : "NONE", reqData, WatchDog.get()
                 );
             }
             if (req instanceof Map) {
-                LOGGER.info("caseid {} type {} costtime {} return_code {} req {}",
+                LOGGER.info("caseid {} type {} costtime {} return_code {} req {} dog {}",
                         req != null ? ((Map) req).get(Dict.CASEID) : "NONE", actionType, now - timestamp,
-                        resp != null ? resp.getRetcode() : "NONE", reqData
+                        resp != null ? resp.getRetcode() : "NONE", reqData,WatchDog.get()
                 );
             }
+
+
         }catch(Throwable  e){
 
 
@@ -86,6 +92,18 @@ public class BaseContext<Req ,Resp extends ReturnResult> implements Context<Req,
     @Override
     public void setActionType(String actionType) {
         this.actionType=  actionType;
+
+    }
+
+    @Override
+    public ReturnResult getFederatedResult() {
+      return   (ReturnResult) dataMap.get(Dict.FEDERATED_RESULT);
+    }
+
+    @Override
+    public void setFederatedResult(ReturnResult returnResult) {
+
+        dataMap.put(Dict.FEDERATED_RESULT,returnResult);
 
     }
 }

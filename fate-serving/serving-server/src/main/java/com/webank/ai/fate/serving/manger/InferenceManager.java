@@ -46,28 +46,21 @@ import java.util.Map;
 public class InferenceManager {
     private static final Logger LOGGER = LogManager.getLogger();
 
-    long beginTime = System.currentTimeMillis();
-//        try {
-//
-//        String classPath = PostProcessing.class.getPackage().getName() + "." + Configuration.getProperty("InferencePostProcessingAdapter");
-//        PostProcessing postProcessing = (PostProcessing) InferenceUtils.getClassByName(classPath);
-//        return postProcessing.getResult(context,featureData, modelResult);
-//    }finally {
-//        long  endTime =  System.currentTimeMillis();
-//        LOGGER.info("postprocess caseid {} cost time {}",context.getCaseId(),endTime-beginTime);
-//    }
-
-
     static  PostProcessing   postProcessing ;
 
     static  PreProcessing    preProcessing;
-    static {
 
-        String classPathPre = PostProcessing.class.getPackage().getName();
-        String postClassPath = classPathPre + "." + Configuration.getProperty(Dict.POST_PROCESSING_CONFIG);
-         postProcessing = (PostProcessing) InferenceUtils.getClassByName(postClassPath);
-        String preClassPath = classPathPre + "." + Configuration.getProperty(Dict.PRE_PROCESSING_CONFIG);
-        preProcessing =  (PreProcessing) InferenceUtils.getClassByName(preClassPath);
+    static {
+        try {
+            String classPathPre = PostProcessing.class.getPackage().getName();
+            String postClassPath = classPathPre + "." + Configuration.getProperty(Dict.POST_PROCESSING_CONFIG);
+            postProcessing = (PostProcessing) InferenceUtils.getClassByName(postClassPath);
+            String preClassPath = classPathPre + "." + Configuration.getProperty(Dict.PRE_PROCESSING_CONFIG);
+            preProcessing = (PreProcessing) InferenceUtils.getClassByName(preClassPath);
+        }catch(Throwable e){
+            LOGGER.error("load post/pre processing error",e);
+        }
+
 
 
     }
@@ -82,9 +75,14 @@ public class InferenceManager {
             LOGGER.info("request caseId {} cost time {}  hit cache true",inferenceRequest.getCaseid(),System.currentTimeMillis()-inferenceBeginTime);
             return inferenceResultFromCache;
         }
+
         switch (inferenceActionType) {
             case SYNC_RUN:
                 ReturnResult inferenceResult = runInference(  context,inferenceRequest);
+                if (inferenceResult!=null&&inferenceResult.getRetcode() == 0) {
+                    CacheManager.putInferenceResultCache(context ,inferenceRequest.getAppid(), inferenceRequest.getCaseid(), inferenceResult);
+                }
+
                 return inferenceResult;
             case GET_RESULT:
                 ReturnResult noCacheInferenceResult = new ReturnResult();
@@ -95,17 +93,16 @@ public class InferenceManager {
                 InferenceWorkerManager.exetute(new Runnable() {
                     @Override
                     public void run() {
-
-
                         ReturnResult inferenceResult=null;
                         try {
                              WatchDog.enter(context);
                              inferenceResult=   runInference(context,inferenceRequest);
-
+                            if (inferenceResult!=null&&inferenceResult.getRetcode() == 0) {
+                                CacheManager.putInferenceResultCache(context ,inferenceRequest.getAppid(), inferenceRequest.getCaseid(), inferenceResult);
+                            }
                         }finally {
                             WatchDog.quit(context);
                             context.postProcess(inferenceRequest,inferenceResult);
-
                         }
                         }
 
@@ -119,6 +116,7 @@ public class InferenceManager {
                 systemErrorReturnResult.setRetcode(InferenceRetCode.SYSTEM_ERROR);
                 return systemErrorReturnResult;
         }
+
     }
 
     public static ReturnResult runInference(Context  context ,InferenceRequest inferenceRequest) {
@@ -189,14 +187,16 @@ public class InferenceManager {
         predictParams.put("federatedParams", federatedParams);
 
         Map<String, Object> modelResult = model.predict(context,featureData, predictParams);
-        boolean getRemotePartyResult = (boolean) federatedParams.getOrDefault("getRemotePartyResult", false);
-        ReturnResult federatedResult = (ReturnResult) predictParams.get("federatedResult");
+
+
+       // boolean getRemotePartyResult = (boolean) federatedParams.getOrDefault("getRemotePartyResult", false);
+        //ReturnResult federatedResult = (ReturnResult) predictParams.get("federatedResult");
+
+        ReturnResult federatedResult = context.getFederatedResult();
         LOGGER.info(modelResult);
         PostProcessingResult postProcessingResult;
         try {
-            if(federatedResult!=null) {
-                modelResult.put("retcode", federatedResult.getRetcode());
-            }
+
             postProcessingResult = getPostProcessedResult(context,featureData, modelResult);
 
 
@@ -208,7 +208,7 @@ public class InferenceManager {
         }
         inferenceResult = postProcessingResult.getProcessingResult();
         inferenceResult.setCaseid(inferenceRequest.getCaseid());
-
+        boolean getRemotePartyResult = (boolean)context.getDataOrDefault(Dict.GET_REMOTE_PARTY_RESULT,false);
         boolean billing = true;
         if (! getRemotePartyResult) {
             billing = false;
@@ -229,13 +229,6 @@ public class InferenceManager {
         logInference(inferenceRequest, modelNamespaceData, inferenceResult, inferenceElapsed, getRemotePartyResult, billing);
 
         inferenceResult=postProcessing.handleResult(context,inferenceResult);
-
-        if (inferenceResult.getRetcode() == 0) {
-            CacheManager.putInferenceResultCache(context ,inferenceRequest.getAppid(), inferenceRequest.getCaseid(), inferenceResult);
-            LOGGER.info("case {} inference successfully use {} ms result {}", inferenceRequest.getCaseid(), inferenceElapsed,inferenceResult.getData());
-        } else {
-            LOGGER.info("case {} failed inference, retcode is {}, use {} ms.", inferenceRequest.getCaseid(), inferenceResult.getRetcode(), inferenceElapsed);
-        }
 
 
         return inferenceResult;

@@ -10,6 +10,7 @@ import com.webank.ai.fate.core.network.grpc.client.GrpcClientPool;
 import com.webank.ai.fate.core.utils.Configuration;
 import com.webank.ai.fate.core.utils.ObjectTransform;
 import com.webank.ai.fate.serving.core.bean.Context;
+import com.webank.ai.fate.serving.core.bean.Dict;
 import com.webank.ai.fate.serving.core.bean.GrpcConnectionPool;
 import com.webank.ai.fate.serving.core.manager.CacheManager;
 import io.grpc.ManagedChannel;
@@ -55,6 +56,7 @@ public abstract class BaseModel {
         if (remoteResultFromCache != null) {
             LOGGER.info("caseid {} get remote party model inference result from cache.",context.getCaseId());
             federatedParams.put("getRemotePartyResult", false);
+            context.putData(Dict.GET_REMOTE_PARTY_RESULT,false);
             return remoteResultFromCache;
         }
 
@@ -68,6 +70,7 @@ public abstract class BaseModel {
         requestData.put("local", ObjectTransform.bean2Json(dstParty));
         requestData.put("role", ObjectTransform.bean2Json(federatedParams.get("role")));
         federatedParams.put("getRemotePartyResult", true);
+        context.putData(Dict.GET_REMOTE_PARTY_RESULT,true);
         ReturnResult remoteResult = getFederatedPredictFromRemote(context,srcParty, dstParty, requestData);
         CacheManager.putRemoteModelInferenceResult(dstParty, federatedRoles, featureIds, remoteResult);
         LOGGER.info("caseid {} get remote party model inference result from federated request." ,context.getCaseId());

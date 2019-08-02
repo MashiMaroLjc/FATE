@@ -1,5 +1,6 @@
 package com.webank.ai.fate.serving.federatedml;
 
+import com.webank.ai.fate.core.bean.ReturnResult;
 import com.webank.ai.fate.core.constant.StatusCode;
 import com.webank.ai.fate.core.mlmodel.buffer.PipelineProto;
 import com.webank.ai.fate.serving.core.bean.Context;
@@ -57,6 +58,11 @@ public class PipelineTask {
             inputData = this.pipeLineNode.get(i).handlePredict(context,inputData, predictParams);
             LOGGER.info("finish mlNone:{}", i);
         }
+        ReturnResult federatedResult = context.getFederatedResult();
+        if(federatedResult!=null) {
+            inputData.put("retcode", federatedResult.getRetcode());
+        }
+
         LOGGER.info("Finish Pipeline predict");
         return inputData;
     }

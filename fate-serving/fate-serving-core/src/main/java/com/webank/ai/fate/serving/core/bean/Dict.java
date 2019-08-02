@@ -9,5 +9,6 @@ public class Dict {
     public  static  final String NONE = "NONE";
     public  static  final String POST_PROCESSING_CONFIG="InferencePostProcessingAdapter";
     public  static  final String PRE_PROCESSING_CONFIG="InferencePreProcessingAdapter";
-
+    public  static  final String GET_REMOTE_PARTY_RESULT ="getRemotePartyResult";
+    public  static  final String FEDERATED_RESULT = "federatedResult";
 }
